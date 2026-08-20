@@ -1,18 +1,16 @@
-import { useHourTrackStore } from "@/src/store";
-import { Text, View } from "react-native";
+import { View, Text } from 'react-native';
+import { useHourTrackStore } from '../src/store';
 
-export default function Index() {
-  const isReady = useHourTrackStore((state) => state.isReady);
-
-
-
+export default function HomeScreen() {
+  const settings = useHourTrackStore((state) => state.settings);
+  const settingsLoading = useHourTrackStore((state) => state.settingsLoading);
 
   return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>HourTrack</Text>
-      <Text>Store ready: {isReady ? 'Yes' : 'No'}</Text>
-
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Home</Text>
+      <Text>
+        Settings: {settingsLoading ? 'Loading...' : settings ? 'Loaded' : 'No settings yet'}
+      </Text>
     </View>
-
   );
 }

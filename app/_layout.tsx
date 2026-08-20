@@ -1,11 +1,18 @@
 import { Tabs } from "expo-router";
 import "./global.css";
-import { initDatabase } from "../src/database";
 import { useEffect } from "react";
+import { initDatabase } from "../src/database";
+import { useHourTrackStore } from "../src/store";
 
 export default function RootLayout() {
+  const loadSettings = useHourTrackStore((state) => state.loadSettings)
+
   useEffect(() => {
-    initDatabase().catch((error) => {
+    const initialise = async () => {
+      await initDatabase();
+      await loadSettings();
+    }
+    initialise().catch((error) => {
       console.error('Error initializing database:', error);
     });
   }, []);
