@@ -113,6 +113,14 @@ export default function RootLayout() {
             ),
           }}
         />
+        <Tabs.Screen
+          name="onboarding"
+          options={{
+            href: null,
+            headerShown: false,
+            tabBarStyle: {display: 'none'}
+          }}
+        />
       </Tabs>
     </SafeAreaProvider>
   );

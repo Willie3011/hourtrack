@@ -1,29 +1,20 @@
-import { View, ScrollView } from 'react-native';
-import RuleBox from '../src/components/shared/RuleBox';
+import { View } from 'react-native';
+import { router } from 'expo-router';
+import AppButton from '../src/components/shared/AppButton';
 import { colors, spacing } from '../src/utils/theme';
 
 export default function HomeScreen() {
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
-    >
-      <RuleBox
-        title="How nightshift is calculated"
-        rules={[
-          '1 hour per shift is automatically converted to overtime',
-          'Remaining hours are paid at your regular rate',
-          'A 10% nightshift allowance is added on top of the remaining hours',
-        ]}
+    <View style={{
+      flex: 1,
+      backgroundColor: colors.background,
+      padding: spacing.lg,
+      justifyContent: 'center',
+    }}>
+      <AppButton
+        label="Go to onboarding"
+        onPress={() => router.push('/onboarding/step1')}
       />
-      <RuleBox
-        title="How overtime works"
-        rules={[
-          'Overtime can occur before or after your regular shift',
-          'Each overtime period is calculated at your overtime multiplier',
-          'Both before and after overtime can apply on the same day',
-        ]}
-      />
-    </ScrollView>
+    </View>
   );
 }
