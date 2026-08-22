@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 import { useEffect } from 'react';
 import { initDatabase } from '../src/database';
 import { useHourTrackStore } from '../src/store';
@@ -13,6 +13,10 @@ export default function RootLayout() {
     const initialise = async () => {
       await initDatabase();
       await loadSettings();
+      const settings = useHourTrackStore.getState().settings;
+      if (!settings || settings.onboarding_complete === 0) {
+        router.replace('/onboarding/step1')
+      }
     };
     initialise().catch((error) => {
       console.error('Initialisation failed:', error);

@@ -39,7 +39,7 @@ export default function OnboardingStep3() {
         if (!validate()) return;
 
         router.push({
-            pathname: '/onboarding/step3',
+            pathname: '/onboarding/step4',
             params: {
                 ...params,
                 holidayPayEnabled: holidayPayEnabled ? '1' : '0',
