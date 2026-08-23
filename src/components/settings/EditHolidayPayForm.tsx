@@ -54,7 +54,7 @@ export default function EditHolidayPayForm({
                 label="Enable holiday pay"
                 value={holidayEnabled}
                 onValueChange={(value) => {
-                    setHolidayEnabled(!value);
+                    setHolidayEnabled(value);
                     setError('');
                 }}
                 hint='Turn on if you earn a different rate on public holidays'
