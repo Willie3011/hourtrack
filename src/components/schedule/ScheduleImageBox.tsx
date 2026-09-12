@@ -4,7 +4,7 @@ import { borderRadius, colors, fontSize, fontWeight, spacing } from '@/src/utils
 import { Ionicons } from '@expo/vector-icons';
 
 interface ScheduleImageBoxProps {
-    imageUri: string;
+    imageUri?: string | null;
     onImageSelected: (uri: string) => void;
 }
 
