@@ -125,6 +125,13 @@ export default function RootLayout() {
             tabBarStyle: {display: 'none'}
           }}
         />
+        <Tabs.Screen
+          name="schedule/[weekId]"
+          options={{
+            href: null,
+            headerShown: false
+          }}
+        />
       </Tabs>
     </SafeAreaProvider>
   );
