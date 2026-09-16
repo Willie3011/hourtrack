@@ -50,7 +50,7 @@ export default function WeekDetailHeader({
 const styles = StyleSheet.create({
     container: {
         paddingHorizontal: spacing.lg,
-        paddingTop: spacing.md,
+        paddingTop: spacing.xxxxxl,
         paddingBottom: spacing.sm,
         backgroundColor: colors.background,
         borderBottomWidth: 1,

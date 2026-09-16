@@ -10,10 +10,11 @@ import { useHourTrackStore } from "@/src/store";
 import { colors, fontSize, spacing } from "@/src/utils/theme";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View, Modal, Image, TouchableOpacity } from "react-native";
+import { calculateNetShiftMinutes } from "../../src/utils/calaculations";
 
 export default function WeekDetailScreen() {
-    const weekId = useLocalSearchParams<{weekId: string}>();
+    const params = useLocalSearchParams();
     const activeWeek = useHourTrackStore((state) => state.activeWeek);
     const scheduledShifts = useHourTrackStore((state) => state.scheduledShifts);
     const settings = useHourTrackStore((state) => state.settings);
@@ -24,8 +25,11 @@ export default function WeekDetailScreen() {
     const editScheduledShift = useHourTrackStore((state) => state.editScheduledShift);
     const removeScheduledShift = useHourTrackStore((state) => state.removeScheduledShift);
 
+    const weekId = Array.isArray(params.weekId) ? params.weekId[0] : params.weekId;
+
     const [showAddShift, setShowAddShift] = useState(false);
     const [editingShift, setEditingShift] = useState<any>(null);
+    const [fullscreenImage, setFullScreenImage] = useState<string | null>(null);
 
     useEffect(() => {
         if(weekId) {
@@ -34,13 +38,14 @@ export default function WeekDetailScreen() {
         }
     }, [weekId]);
 
-    const calculateTotalHours = (): Number => {
+    const calculateTotalHours = (): number => {
         return scheduledShifts.reduce((total, shift) => {
-            const [startH, startM] = shift.shift_start.split(':').map(Number);
-            const [endH, endM] = shift.shift_end.split(':').map(Number);
-            const minutes = (endH * 60 + endM) - (startH * 60 + startM);
-            return total + minutes / 60;
-        }, 0)
+            const netMinutes = calculateNetShiftMinutes(
+                shift.shift_start,
+                shift.shift_end
+            );
+            return total + netMinutes / 60;
+        }, 0);
     }
 
     const getWeekTag = (): string => {
@@ -100,6 +105,7 @@ export default function WeekDetailScreen() {
                 <ScheduleImageBox
                     imageUri={activeWeek.schedule_image_url}
                     onImageSelected={(uri) => setWeekImage(Number(weekId), uri)}
+                    onViewFullscreen={() => activeWeek.schedule_image_url && setFullScreenImage(activeWeek.schedule_image_url)}
                 />
 
                 <SectionHeader
@@ -165,6 +171,26 @@ export default function WeekDetailScreen() {
                     }
                 />
             </BottomSheet>
+            <Modal
+                visible={!!fullscreenImage}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setFullScreenImage(null)}
+            >
+                <TouchableOpacity
+                    style={styles.fullscreenOverlay}
+                    activeOpacity={1}
+                    onPress={() => setFullScreenImage(null)}
+                >
+                    {fullscreenImage && (
+                        <Image
+                            source={{uri: fullscreenImage}}
+                            style={styles.fullscreenImage}
+                            resizeMode="contain"
+                        />
+                    )}
+                </TouchableOpacity>
+            </Modal>
         </>
     )
 }
@@ -186,5 +212,15 @@ const styles = StyleSheet.create({
     loadingText: {
         fontSize: fontSize.body,
         color: colors.textMuted
+    },
+    fullscreenOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.9)',
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    fullscreenImage: {
+        width: '100%',
+        height: '80%'
     }
 });

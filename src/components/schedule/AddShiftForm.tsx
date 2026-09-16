@@ -3,6 +3,7 @@ import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AppInput from "../shared/AppInput";
 import AppButton from "../shared/AppButton";
+import TimePicker from "../shared/TimePicker";
 
 const DAYS = [
     'Monday',
@@ -41,11 +42,6 @@ export default function AddShiftForm({
     });
     const [loading, setLoading] = useState(false);
 
-    const validateTime = (time: string): boolean => {
-        const regex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-        return regex.test(time);
-    };
-
     const validate = ():boolean => {
         const newErrors = {day: '', start: '', end: ''};
         let valid = true;
@@ -54,12 +50,12 @@ export default function AddShiftForm({
             newErrors.day = 'Please select a day';
             valid = false;
         }
-        if(!validateTime(startTime)) {
-            newErrors.start = 'Enter a valid time e.g 08:00';
+        if(!startTime) {
+            newErrors.start = 'Please select a start time';
             valid = false;
         }
-        if(!validateTime(endTime)) {
-            newErrors.end = 'Enter a valid time e.g 17:00';
+        if(!endTime) {
+            newErrors.end = 'Please select an end time';
             valid = false;
         }
 
@@ -68,11 +64,10 @@ export default function AddShiftForm({
     }
 
     const handleSave = async () => {
-        if (validate()) return;
+        if (!validate()) return;
         setLoading(true);
         await onSave(selectedDay, startTime, endTime);
         setLoading(false);
-
     }
 
     return (
@@ -106,22 +101,18 @@ export default function AddShiftForm({
 
             <View style={styles.timeRow}>
                 <View style={styles.timeCol}>
-                    <AppInput
-                        label="Start Time"
+                    <TimePicker
+                        label="Start time"
                         value={startTime}
-                        onChangeText={setStartTime}
-                        placeholder="08:00"
-                        keyboardType="numeric"
+                        onChange={setStartTime}
                         error={errors.start}
                     />
                 </View>
                 <View style={styles.timeCol}>
-                    <AppInput
-                        label="End Time"
+                    <TimePicker
+                        label="End time"
                         value={endTime}
-                        onChangeText={setEndTime}
-                        placeholder="17:00"
-                        keyboardType="numeric"
+                        onChange={setEndTime}
                         error={errors.end}
                     />
                 </View>

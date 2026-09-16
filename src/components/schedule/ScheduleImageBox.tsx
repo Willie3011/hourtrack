@@ -6,11 +6,13 @@ import { Ionicons } from '@expo/vector-icons';
 interface ScheduleImageBoxProps {
     imageUri?: string | null;
     onImageSelected: (uri: string) => void;
+    onViewFullscreen?: () => void;
 }
 
 export default function ScheduleImageBox({
     imageUri,
-    onImageSelected
+    onImageSelected,
+    onViewFullscreen
 }: ScheduleImageBoxProps) {
     const pickImage = async () => {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -38,7 +40,7 @@ export default function ScheduleImageBox({
                 <View style={styles.actionRow}>
                     <TouchableOpacity
                         style={styles.actionBtn}
-                        onPress={() => {}}
+                        onPress={onViewFullscreen}
                         activeOpacity={0.7}
                     >
                         <Ionicons name="expand" size={16} color={colors.textSecondary} />

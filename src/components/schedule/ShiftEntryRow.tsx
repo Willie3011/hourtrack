@@ -3,7 +3,9 @@ import {
     colors, 
     fontSize,
     fontWeight,
-    spacing } from '../../utils/theme';
+    spacing 
+} from '../../utils/theme';
+import {calculateNetShiftMinutes, formatDuration} from '../../utils/calaculations'
 
 interface ShiftEntryRowProps {
     day: string;
@@ -20,14 +22,8 @@ export default function ShiftEntryRow({
     onEdit,
     onDelete
 }: ShiftEntryRowProps) {
-    const calculateHours = (start: string, end: string): string => {
-        const [startH, startM] = start.split(':').map(Number);
-        const [endH, endM] = end.split(':').map(Number);
-        const totalMinutes = (endH * 60 + endM) - (startH * 60 + startM);
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-        return minutes > 0 ? `${hours}h ${minutes}m` : `${hours} hrs`;
-    }
+    const netMinutes = calculateNetShiftMinutes(shiftStart, shiftEnd);
+    const hoursDisplay = formatDuration(netMinutes)
 
     return (
         <View style={styles.row}>
@@ -37,7 +33,7 @@ export default function ShiftEntryRow({
             </View>
             <View style={styles.right}>
                 <Text style={styles.hours}>
-                    {calculateHours(shiftStart, shiftEnd)}
+                    {hoursDisplay}
                 </Text>
                 <View style={styles.actions}>
                     <TouchableOpacity onPress={onEdit} activeOpacity={0.7}>
