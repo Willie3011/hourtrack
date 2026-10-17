@@ -19,7 +19,19 @@ import {
     createScheduledShift,
     updateScheduledShift,
     deleteScheduledShift
-  } from "../database/schedulesShifts";
+} from "../database/schedulesShifts";
+import {
+    LoggedShift,
+    getAllLoggedShifts,
+    getLoggedShiftsByMonth,
+    getLoggedShiftsByWeek,
+    getRecentLoggedShifts,
+    createLoggedShift,
+    updateLoggedShift,
+    deleteLoggedShift
+} from "../database/loggedShifts";
+import { recalculateMonthSummary } from "../database/months";
+
 
 interface SettingsSlice {
     settings: Settings | null;
@@ -33,8 +45,11 @@ interface ShiftsSlice {
     weeks: Week[];
     activeWeek: Week | null;
     scheduledShifts: ScheduledShift[];
+    loggedShifts: LoggedShift[];
+    recentShifts: LoggedShift[];
     weeksLoading: boolean;
     shiftsLoading: boolean;
+    loggedShiftsLoading: boolean;
     loadWeeks: () => Promise<void>;
     loadWeeksById: (id: number) => Promise<void>;
     addWeek: (week: Week) => Promise<number>;
@@ -44,6 +59,11 @@ interface ShiftsSlice {
     addScheduledShift: (shift: ScheduledShift) => Promise<void>;
     editScheduledShift: (shift: ScheduledShift) => Promise<void>;
     removeScheduledShift: (id: number) => Promise<void>;
+    loadLoggedShifts: () => Promise<void>;
+    loadRecentShifts: () => Promise<void>;
+    addLoggedShift: (shift: LoggedShift) => Promise<void>;
+    editLoggedShift: (shift: LoggedShift) => Promise<void>;
+    removeLoggedShift: (id: number) => Promise<void>;
 }
 
 interface SummarySlice {
@@ -136,6 +156,58 @@ export const useHourTrackStore = create<HourTrackStore>((set, get) => ({
         const weekId = get().scheduledShifts.find((s) => s.id === id)?.week_id;
         await deleteScheduledShift(id);
         if (weekId) await get().loadShiftsByWeek(weekId);
+    },
+
+    // Logged shifts slice
+    loggedShifts: [],
+    recentShifts: [],
+    loggedShiftsLoading: false,
+
+    loadLoggedShifts: async () => {
+        set({loggedShiftsLoading: true});
+        const shifts = await getAllLoggedShifts();
+        set({loggedShifts: shifts, loggedShiftsLoading: false});
+    },
+
+    loadRecentShifts: async () => {
+        const shifts = await getRecentLoggedShifts(3);
+        set({recentShifts: shifts});
+    },
+
+    addLoggedShift: async (shift: LoggedShift) => {
+        await createLoggedShift(shift);
+        const date = new Date(shift.date);
+        await recalculateMonthSummary(
+            date.getMonth() + 1,
+            date.getFullYear()
+        );
+        await get().loadLoggedShifts();
+        await get().loadRecentShifts();
+    },
+
+    editLoggedShift: async (shift: LoggedShift) => {
+        await updateLoggedShift(shift);
+        const date = new Date(shift.date);
+        await recalculateMonthSummary(
+            date.getMonth() + 1,
+            date.getFullYear()
+        );
+        await get().loadLoggedShifts();
+        await get().loadRecentShifts();
+    },
+
+    removeLoggedShift: async (id: number) => {
+        const shift = get().loggedShifts.find((s) => s.id === id);
+        await deleteLoggedShift(id);
+        if(shift) {
+            const date = new Date(shift.date);
+            await recalculateMonthSummary(
+                date.getMonth() + 1,
+                date.getFullYear()
+            );
+        }
+        await get().loadLoggedShifts();
+        await get().loadRecentShifts();
     },
 
     monthlySummary: null,
