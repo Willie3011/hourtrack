@@ -9,19 +9,19 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 export default function RootLayout() {
   const loadSettings = useHourTrackStore((state) => state.loadSettings);
 
-  useEffect(() => {
-    const initialise = async () => {
-      await initDatabase();
-      await loadSettings();
-      const settings = useHourTrackStore.getState().settings;
-      if (!settings || settings.onboarding_complete === 0) {
-        router.replace('/onboarding/step1')
-      }
-    };
-    initialise().catch((error) => {
-      console.error('Initialisation failed:', error);
-    });
-  }, []);
+useEffect(() => {
+  const initialise = async () => {
+    await initDatabase();
+    await loadSettings();
+    const settings = useHourTrackStore.getState().settings;
+    if (!settings || settings.onboarding_complete === 0) {
+      router.replace('/onboarding/step1')
+    }
+  };
+  initialise().catch((error) => {
+    console.error('Initialisation failed:', error);
+  });
+}, []);
 
   return (
     <SafeAreaProvider>
@@ -131,6 +131,13 @@ export default function RootLayout() {
             href: null,
             headerShown: false
           }}
+        />
+        <Tabs.Screen
+        name="log-hours/logged-shifts"
+        options={{
+          href: null,
+          headerShown: false
+        }}
         />
       </Tabs>
     </SafeAreaProvider>

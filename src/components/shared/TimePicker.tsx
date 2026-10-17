@@ -36,7 +36,7 @@ export default function TimePicker({
     const handleChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
         if (Platform.OS === 'android') {
             setShow(false);
-            if(event.type === 'set' && selectedDate) {
+            if(selectedDate && event.type !== 'dismissed'){
                 onChange(dateToTimeString(selectedDate));
             }
         }

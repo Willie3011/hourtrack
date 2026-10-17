@@ -1,5 +1,5 @@
 /**
- * Converts a time string HH:MM to toal minutes since midnight
+ * Converts a time string HH:MM to total minutes since midnight
  */
 
 export const timeToMinutes = (time: string): number => {
@@ -48,7 +48,14 @@ export const calculateNetShiftMinutes = (
     lunchIn?: string | null,
 ): number => {
     const startMinutes = timeToMinutes(shiftStart);
-    const endMinutes = timeToMinutes(shiftEnd);
+    let endMinutes = timeToMinutes(shiftEnd);
+
+    //Handle cross-midnight shifts
+    //If end time is less than or equal to start time
+    //the shift crosses midnight so add 24 hours to end time
+    if(endMinutes <= startMinutes) {
+        endMinutes += 24 * 60; // add 24 hours in minutes
+    }
     const rawMinutes = endMinutes - startMinutes;
 
     // Standard 1 hour lunch deduction
@@ -57,8 +64,13 @@ export const calculateNetShiftMinutes = (
     //Calculate actual lunch duration if logged
     let actualLunchMinutes = 0;
     if (lunchOut && lunchIn) {
-        const lunchOutMinutes = timeToMinutes(lunchOut);
-        const lunchInMinutes = timeToMinutes(lunchIn);
+        let lunchOutMinutes = timeToMinutes(lunchOut);
+        let lunchInMinutes = timeToMinutes(lunchIn);
+
+        //handle cross-midnight lunch edge case
+        if(lunchInMinutes <= lunchOutMinutes) {
+            lunchInMinutes += 24 * 60; // add 24 hours in minutes
+        }
         actualLunchMinutes = lunchInMinutes - lunchOutMinutes;
     }
 
@@ -87,15 +99,25 @@ export const calculateLostTimeMinutes = (
     // late arrival
     if(arrivalTime) {
         const scheduledStart = timeToMinutes(shiftStart);
-        const actualArrival = timeToMinutes(arrivalTime);
+        let actualArrival = timeToMinutes(arrivalTime);
+
+        //handle cross-midnight arrival edge case
+        if(actualArrival < scheduledStart - 12 * 60) {
+            actualArrival += 24 * 60; // add 24 hours in minutes
+        }
         const lateMinutes = Math.max(actualArrival - scheduledStart, 0);
         lostMinutes += lateMinutes;
     }
 
     // Extended lunch beyond 1 hour
     if (lunchOut && lunchIn) {
-        const lunchOutMinutes = timeToMinutes(lunchOut);
-        const lunchInMinutes = timeToMinutes(lunchIn);
+        let lunchOutMinutes = timeToMinutes(lunchOut);
+        let lunchInMinutes = timeToMinutes(lunchIn);
+
+        //handle cross-midnight lunch edge case
+        if(lunchInMinutes <= lunchOutMinutes) {
+            lunchInMinutes += 24 * 60; // add 24 hours in minutes
+        }
         const lunchDuration =lunchInMinutes - lunchOutMinutes;
         const extraLunch = Math.max(lunchDuration - 60, 0);
         lostMinutes += extraLunch;
