@@ -64,6 +64,8 @@ interface ShiftsSlice {
     addLoggedShift: (shift: LoggedShift) => Promise<void>;
     editLoggedShift: (shift: LoggedShift) => Promise<void>;
     removeLoggedShift: (id: number) => Promise<void>;
+    editingShift: LoggedShift | null;
+    setEditingShift: (shift: LoggedShift | null) => void;
 }
 
 interface SummarySlice {
@@ -162,6 +164,8 @@ export const useHourTrackStore = create<HourTrackStore>((set, get) => ({
     loggedShifts: [],
     recentShifts: [],
     loggedShiftsLoading: false,
+    editingShift: null,
+    setEditingShift: (shift) => set({ editingShift: shift }),
 
     loadLoggedShifts: async () => {
         set({loggedShiftsLoading: true});
@@ -186,12 +190,17 @@ export const useHourTrackStore = create<HourTrackStore>((set, get) => ({
     },
 
     editLoggedShift: async (shift: LoggedShift) => {
+        const previous = get().loggedShifts.find((s) => s.id === shift.id);
         await updateLoggedShift(shift);
-        const date = new Date(shift.date);
-        await recalculateMonthSummary(
-            date.getMonth() + 1,
-            date.getFullYear()
-        );
+
+        const newDate = new Date(shift.date);
+        await recalculateMonthSummary(newDate.getMonth() + 1, newDate.getFullYear());
+
+        //IF the date moved to a different month, the old month's totals must be recalculated too, or they keep counting this shift
+        if(previous && previous.date.slice(0, 7) !== shift.date.slice(0,7)) {
+            const oldDate = new Date(previous.date);
+            await recalculateMonthSummary(oldDate.getMonth() + 1, oldDate.getFullYear());
+        }
         await get().loadLoggedShifts();
         await get().loadRecentShifts();
     },

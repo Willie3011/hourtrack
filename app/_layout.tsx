@@ -8,11 +8,13 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
   const loadSettings = useHourTrackStore((state) => state.loadSettings);
+  const loadRecentShifts = useHourTrackStore((state) => state.loadRecentShifts);
 
 useEffect(() => {
   const initialise = async () => {
     await initDatabase();
     await loadSettings();
+    await loadRecentShifts();
     const settings = useHourTrackStore.getState().settings;
     if (!settings || settings.onboarding_complete === 0) {
       router.replace('/onboarding/step1')

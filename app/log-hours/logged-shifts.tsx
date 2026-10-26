@@ -26,6 +26,7 @@ export default function LoggedShiftsScreen() {
   const loggedShifts = useHourTrackStore((state) => state.loggedShifts);
   const loadLoggedShifts = useHourTrackStore((state) => state.loadLoggedShifts);
   const removeLoggedShift = useHourTrackStore((state) => state.removeLoggedShift);
+  const setEditingShift = useHourTrackStore((state) => state.setEditingShift);
 
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
 
@@ -111,7 +112,10 @@ export default function LoggedShiftsScreen() {
                   overtimeHours={shift.overtime_hours}
                   expectedEarnings={shift.expected_earnings}
                   lostTimeMinutes={shift.lost_time_minutes}
-                  onEdit={() => console.log('Edit shift', shift.id)}
+                  onEdit={() => {
+                    setEditingShift(shift);
+                    router.push('/log-hours');
+                  }}
                   onDelete={() => handleDelete(shift.id!)}
                 />
               ))}
