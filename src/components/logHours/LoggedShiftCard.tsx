@@ -42,9 +42,10 @@ export default function LoggedShiftCard({
         });
     };
 
-    const badgeColors = BADGE_COLORS[shiftType]
+    const badgeColors = BADGE_COLORS[shiftType];
     const totalHours = regularHours + overtimeHours;
-  return (
+    
+    return (
     <View style={styles.card}>
         <View style={styles.top}>
             <Text style={styles.date}>{formatDate(date)}</Text>
