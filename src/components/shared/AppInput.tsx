@@ -7,6 +7,7 @@ interface AppInputProps {
     onChangeText: (text: string) => void;
     placeholder?: string;
     keyboardType?: 'default' | 'numeric' | 'decimal-pad';
+    autoCapitalize?: 'none' | 'words' | 'sentences'; 
     hint?: string;
     error?: string;
     secureTextEntry?: boolean;
@@ -19,6 +20,7 @@ export default function AppInput({
     onChangeText,
     placeholder,
     keyboardType = 'default',
+    autoCapitalize = 'none',
     hint,
     error,
     secureTextEntry = false,
@@ -40,7 +42,7 @@ export default function AppInput({
                 keyboardType={keyboardType}
                 secureTextEntry={secureTextEntry}
                 editable={editable}
-                autoCapitalize='none'
+                autoCapitalize={autoCapitalize}
                 autoCorrect={false}
             />
             {hint && !error && (
