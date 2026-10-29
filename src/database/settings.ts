@@ -2,6 +2,7 @@ import { getDatabase } from './index';
 
 export interface Settings { 
     id?: number;
+    name?: string;
     hourly_rate: number;
     contracted_weekly_hours: number;
     overtime_multiplier: number;
@@ -16,15 +17,26 @@ export const createSettingsTable = async (): Promise<void> => {
     await db.execAsync(`
         CREATE TABLE IF NOT EXISTS settings (
             id INTEGER PRIMARY KEY NOT NULL DEFAULT 1,
+            name TEXT NOT NULL DEFAULT '',
             hourly_rate REAL NOT NULL DEFAULT 0,
             contracted_weekly_hours REAL NOT NULL DEFAULT 0,
             overtime_multiplier REAL NOT NULL DEFAULT 1.5,
             holiday_pay_enabled INTEGER NOT NULL DEFAULT 0,
             holiday_multiplier REAL NOT NULL DEFAULT 2,
             nightshift_enabled INTEGER NOT NULL DEFAULT 0,
-            onboarding_complete INTEGER NOT NULL DEFAULT 0 
-    );   
+            onboarding_complete INTEGER NOT NULL DEFAULT 0
+        );
     `);
+    
+    // Migration: databases created before the name column existed
+    const columns = await db.getAllAsync<{name: string}>(
+        'PRAGMA table_info(settings);'
+    );
+    if(!columns.some((c) => c.name === 'name')) {
+        await db.execAsync(
+            `ALTER TABLE settings ADD COLUMN name TEXT NOT NULL DEFAULT '';`
+        );
+    }
 };
 
 export const getSettings = async (): Promise<Settings | null> => {
@@ -35,9 +47,10 @@ export const getSettings = async (): Promise<Settings | null> => {
 
 export const saveSettings = async (settings: Settings): Promise<void> => {
     const db = await getDatabase();
-    await db.runAsync(`
-        INSERT OR REPLACE INTO settings (
+    await db.runAsync(
+        `INSERT OR REPLACE INTO settings (
             id,
+            name,
             hourly_rate,
             contracted_weekly_hours,
             overtime_multiplier,
@@ -45,16 +58,19 @@ export const saveSettings = async (settings: Settings): Promise<void> => {
             holiday_multiplier,
             nightshift_enabled,
             onboarding_complete
-        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?)`, [
-        settings.hourly_rate,
-        settings.contracted_weekly_hours,
-        settings.overtime_multiplier,
-        settings.holiday_pay_enabled,
-        settings.holiday_multiplier,
-        settings.nightshift_enabled,
-        settings.onboarding_complete,
-    ]);
-};
+        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?);`,
+         [
+            settings.name ?? '',
+            settings.hourly_rate,
+            settings.contracted_weekly_hours,
+            settings.overtime_multiplier,
+            settings.holiday_pay_enabled,
+            settings.holiday_multiplier,
+            settings.nightshift_enabled,
+            settings.onboarding_complete
+         ]
+    )
+}
 
 export const updateSettings = async (settings: Partial<Settings>): Promise<void> => {
     const db = await getDatabase();

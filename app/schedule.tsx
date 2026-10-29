@@ -6,6 +6,7 @@ import EmptyState from "@/src/components/shared/EmptyState";
 import { getDatabase } from "@/src/database";
 import { useHourTrackStore } from "@/src/store";
 import { calculateNetShiftMinutes } from "@/src/utils/calaculations";
+import { addDays, getMondayOf, toDateString } from "@/src/utils/dates";
 import { colors, fontSize, spacing } from "@/src/utils/theme";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -51,17 +52,9 @@ export default function ScheduleScreen() {
   };
 
   const getWeekDates = () => {
-    const now = new Date();
-    const dayOfWeek = now.getDay(); // 0 (Sunday) to 6 (Saturday)
-    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // adjust when day is sunday
-    const monday = new Date(now.setDate(diff));
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    return {
-      start: monday.toISOString().split("T")[0],
-      end: sunday.toISOString().split("T")[0],
-    };
-  };
+  const monday = getMondayOf(new Date());
+  return { start: toDateString(monday), end: toDateString(addDays(monday, 6)) };
+};
 
   const weekAlreadyExists = (start: string): boolean => {
     return weeks.some((week) => week.week_start_date === start);
