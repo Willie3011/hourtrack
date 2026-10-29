@@ -10,6 +10,7 @@ import {
   getLoggedShiftsByMonth,
 } from "../src/database/loggedShifts";
 import { useState } from "react";
+import { addDays, getMondayOf, toDateString } from "@/src/utils/dates";
 
 export default function HomeScreen() {
   const settings = useHourTrackStore((state) => state.settings);
@@ -28,19 +29,10 @@ export default function HomeScreen() {
     return "Good evening";
   };
 
-  const getWeekDates = () => {
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    const monday = new Date(now);
-    monday.setDate(diff);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    return {
-      start: monday.toISOString().split("T")[0],
-      end: sunday.toISOString().split("T")[0],
-    };
-  };
+const getWeekDates = () => {
+  const monday = getMondayOf(new Date());
+  return { start: toDateString(monday), end: toDateString(addDays(monday, 6)) };
+};
 
   useEffect(() => {
     const init = async () => {
@@ -97,10 +89,11 @@ export default function HomeScreen() {
 
   const hasData = recentShifts.length > 0;
 
+  const name = settings?.name?.trim();
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <GreetingHeader
-        greeting={`${getGreeting()}, Willem`}
+        greeting={`${getGreeting()}${name ? ` ,${name}` : ''}`}
         subtitle={
           hasData ? "Here is your earnings overview" : "Let's get you set up"
         }
