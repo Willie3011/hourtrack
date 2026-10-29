@@ -19,6 +19,7 @@ import AppButton from '../src/components/shared/AppButton';
 import AppInput from '../src/components/shared/AppInput';
 import BottomSheet from '../src/components/shared/BottomSheet';
 import { colors, spacing, fontSize } from '../src/utils/theme';
+import DatePicker from '@/src/components/shared/Datepicker';
 
 type WeekStats = Record<number, { count: number; minutes: number }>;
 
@@ -201,24 +202,17 @@ export default function ScheduleScreen() {
           <View style={styles.dividerLine} />
         </View>
 
-        <AppInput
-          label="Week start date"
+        <DatePicker
+          label='Week start date'
           value={customStartDate}
-          onChangeText={(text) => {
-            setCustomStartDate(text);
-            setDateError('');
-          }}
-          placeholder="YYYY-MM-DD e.g. 2026-07-14"
+          onChange={setCustomStartDate}
           error={dateError}
         />
-        <AppInput
-          label="Week end date"
+        <DatePicker
+          label='Week end date'
           value={customEndDate}
-          onChangeText={(text) => {
-            setCustomEndDate(text);
-            setDateError('');
-          }}
-          placeholder="YYYY-MM-DD e.g. 2026-07-20"
+          onChange={setCustomEndDate}
+          error={dateError}
         />
 
         <AppButton

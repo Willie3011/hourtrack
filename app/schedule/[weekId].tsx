@@ -116,6 +116,15 @@ export default function WeekDetailScreen() {
     );
   };
 
+  const handleImageSelected = async (uri: string) => {
+    try {
+      await setWeekImage(Number(weekId), uri);
+    } catch (error) {
+      console.error('Saving schedule image failed: ', error);
+      Alert.alert('Could not save image', 'Please try again');
+    }
+  }
+
   if (!activeWeek) {
     return (
       <View style={styles.loading}>
@@ -138,7 +147,7 @@ export default function WeekDetailScreen() {
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
         <ScheduleImageBox
           imageUri={activeWeek.schedule_image_url}
-          onImageSelected={(uri) => setWeekImage(Number(weekId), uri)}
+          onImageSelected={handleImageSelected}
           onViewFullscreen={() =>
             activeWeek.schedule_image_url &&
             setFullScreenImage(activeWeek.schedule_image_url)

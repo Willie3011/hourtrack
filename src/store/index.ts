@@ -31,6 +31,7 @@ import {
     deleteLoggedShift
 } from "../database/loggedShifts";
 import { recalculateMonthSummary } from "../database/months";
+import { persistScheduleImage, deleteScheduleImage } from "../utils/images";
 
 
 interface SettingsSlice {
@@ -125,16 +126,32 @@ export const useHourTrackStore = create<HourTrackStore>((set, get) => ({
     },
 
     setWeekImage: async (id: number, uri: string) => {
-        await updateWeekImage(id, uri);
+        // Look up the current image so we can clean it up after replacing it
+        const existing = await getWeekById(id);
+        const previousUri = existing?.schedule_image_url;
+
+        // Copy first, then update the database. If either step fails the
+        // user keeps their old image and we don't leave an orphaned copy
+        const savedUri = persistScheduleImage(uri);
+        try {
+            await updateWeekImage(id, savedUri);
+        } catch (error) {
+            deleteScheduleImage(savedUri)
+            throw error;
+        }
+        deleteScheduleImage(previousUri);
+
         await get().loadWeeks();
         const activeWeek = get().activeWeek;
         if (activeWeek && activeWeek.id === id) {
-            set({ activeWeek: { ...activeWeek, schedule_image_url: uri } });
+            set({activeWeek: {...activeWeek, schedule_image_url: savedUri}})
         }
     },
 
     removeWeek: async (id: number) => {
+        const existing = await getWeekById(id);
         await deleteWeek(id);
+        deleteScheduleImage(existing?.schedule_image_url);
         await get().loadWeeks();
     },
 
