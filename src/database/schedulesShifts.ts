@@ -102,3 +102,8 @@ export const getScheduledShiftsInRange = async (
             [startDate, endDate]
         );
 }
+
+export const getAllScheduledShifts = async (): Promise<ScheduledShift[]> => {
+    const db = await getDatabase();
+    return db.getAllAsync<ScheduledShift>('SELECT * from scheduled_shifts;');
+}

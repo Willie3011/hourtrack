@@ -1,140 +1,148 @@
-import WeekCard from "@/src/components/schedule/WeekCard";
-import AppButton from "@/src/components/shared/AppButton";
-import AppInput from "@/src/components/shared/AppInput";
-import BottomSheet from "@/src/components/shared/BottomSheet";
-import EmptyState from "@/src/components/shared/EmptyState";
-import { getDatabase } from "@/src/database";
-import { useHourTrackStore } from "@/src/store";
-import { calculateNetShiftMinutes } from "@/src/utils/calaculations";
-import { addDays, getMondayOf, toDateString } from "@/src/utils/dates";
-import { colors, fontSize, spacing } from "@/src/utils/theme";
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
 import {
   View,
-  Text,
   ScrollView,
   StyleSheet,
-  Modal,
   TouchableOpacity,
+  Text,
+  Modal,
   Image,
-  Alert,
-} from "react-native";
+} from 'react-native';
+import { useCallback, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useHourTrackStore } from '../src/store';
+import { getAllScheduledShifts } from '../src/database/schedulesShifts';
+import { calculateNetShiftMinutes } from '../src/utils/calaculations';
+import { getMondayOf, addDays, toDateString } from '../src/utils/dates';
+import WeekCard from '../src/components/schedule/WeekCard';
+import EmptyState from '../src/components/shared/EmptyState';
+import AppButton from '../src/components/shared/AppButton';
+import AppInput from '../src/components/shared/AppInput';
+import BottomSheet from '../src/components/shared/BottomSheet';
+import { colors, spacing, fontSize } from '../src/utils/theme';
+
+type WeekStats = Record<number, { count: number; minutes: number }>;
+
+const isValidDate = (s: string): boolean => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const [y, m, d] = s.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return (
+    date.getFullYear() === y &&
+    date.getMonth() === m - 1 &&
+    date.getDate() === d
+  );
+};
 
 export default function ScheduleScreen() {
   const weeks = useHourTrackStore((state) => state.weeks);
-  const scheduledShifts = useHourTrackStore((state) => state.scheduledShifts);
   const loadWeeks = useHourTrackStore((state) => state.loadWeeks);
   const addWeek = useHourTrackStore((state) => state.addWeek);
-  const weeksLoading = useHourTrackStore((state) => state.weeksLoading);
-  const settings = useHourTrackStore((state) => state.settings);
 
   const [showAddWeek, setShowAddWeek] = useState(false);
-  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [addingWeek, setAddingWeek] = useState(false);
-  const [customStartDate, setCustomStartDate] = useState("");
-  const [customEndDate, setCustomEndDate] = useState("");
-  const [dateError, setDateError] = useState("");
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [dateError, setDateError] = useState('');
+  const [weekStats, setWeekStats] = useState<WeekStats>({});
 
-  useEffect(() => {
-    loadWeeks();
-  }, []);
+  // Reload weeks and their shift totals every time the tab gains focus,
+  // so edits made on the week detail screen show up on return
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      const load = async () => {
+        try {
+          await loadWeeks();
+          const rows = await getAllScheduledShifts();
+          if (!active) return;
+          const stats: WeekStats = {};
+          for (const r of rows) {
+            const entry = stats[r.week_id] ?? { count: 0, minutes: 0 };
+            entry.count += 1;
+            entry.minutes += calculateNetShiftMinutes(r.shift_start, r.shift_end);
+            stats[r.week_id] = entry;
+          }
+          setWeekStats(stats);
+        } catch (error) {
+          console.error('Schedule load error:', error);
+        }
+      };
+      load();
+      return () => {
+        active = false;
+      };
+    }, [loadWeeks])
+  );
 
   const getWeekTag = (weekStartDate: string): string => {
     const now = new Date();
     const start = new Date(weekStartDate);
     const diffDays = Math.floor(
-      (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+      (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
     );
-    if (diffDays < 7) return "Current week";
-    if (diffDays < 14) return "Last week";
+    if (diffDays < 7) return 'Current week';
+    if (diffDays < 14) return 'Last week';
     return `${Math.floor(diffDays / 7)} weeks ago`;
   };
 
-  const getWeekDates = () => {
-  const monday = getMondayOf(new Date());
-  return { start: toDateString(monday), end: toDateString(addDays(monday, 6)) };
-};
+  const weekAlreadyExists = (start: string): boolean =>
+    weeks.some((w) => w.week_start_date === start);
 
-  const weekAlreadyExists = (start: string): boolean => {
-    return weeks.some((week) => week.week_start_date === start);
+  const closeSheet = () => {
+    setShowAddWeek(false);
+    setDateError('');
+    setCustomStartDate('');
+    setCustomEndDate('');
   };
 
   const handleAddCurrentWeek = async () => {
-    const { start, end } = getWeekDates();
+    const monday = getMondayOf(new Date());
+    const start = toDateString(monday);
+    const end = toDateString(addDays(monday, 6));
 
     if (weekAlreadyExists(start)) {
-      setDateError("Current week already exists");
+      setDateError('Current week already exists');
       return;
     }
     setAddingWeek(true);
-    const id = await addWeek({
-      week_start_date: start,
-      week_end_date: end,
-    });
-    setAddingWeek(false);
-    setShowAddWeek(false);
-    router.push(`/schedule/${id}`);
+    try {
+      const id = await addWeek({ week_start_date: start, week_end_date: end });
+      closeSheet();
+      router.push(`/schedule/${id}`);
+    } finally {
+      setAddingWeek(false);
+    }
   };
 
   const handleAddCustomWeek = async () => {
     if (!customStartDate || !customEndDate) {
-      setDateError("Please enter both start and end dates");
+      setDateError('Please enter both start and end dates');
       return;
     }
-
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(customStartDate) || !dateRegex.test(customEndDate)) {
-      setDateError("Use format YYYY-MM-DD e.g. 2025-07-14");
+    if (!isValidDate(customStartDate) || !isValidDate(customEndDate)) {
+      setDateError('Enter real dates as YYYY-MM-DD e.g. 2026-07-14');
       return;
     }
-
+    if (customEndDate < customStartDate) {
+      setDateError('End date must be on or after the start date');
+      return;
+    }
     if (weekAlreadyExists(customStartDate)) {
-      setDateError("A week starting on this date already exists");
+      setDateError('A week starting on this date already exists');
       return;
     }
     setAddingWeek(true);
-    const id = await addWeek({
-      week_start_date: customStartDate,
-      week_end_date: customEndDate,
-    });
-    setAddingWeek(false);
-    setShowAddWeek(false);
-    setCustomStartDate("");
-    setCustomEndDate("");
-    setDateError("");
-    router.push(`/schedule/${id}`);
-  };
-
-  const calculateTotalHours = (): number => {
-    return scheduledShifts.reduce((total, shift) => {
-      const netMinutes = calculateNetShiftMinutes(
-        shift.shift_start,
-        shift.shift_end,
-      );
-      return total + netMinutes / 60;
-    }, 0);
-  };
-
-  const totalHours = calculateTotalHours();
-
-  const resetWeeks = async () => {
-    Alert.alert(
-      "Reset weeks",
-      "This will delete all saved weeks. Are you sure?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset",
-          style: "destructive",
-          onPress: async () => {
-            const db = await getDatabase();
-            await db.execAsync("DELETE FROM weeks;");
-            await loadWeeks();
-          },
-        },
-      ],
-    );
+    try {
+      const id = await addWeek({
+        week_start_date: customStartDate,
+        week_end_date: customEndDate,
+      });
+      closeSheet();
+      router.push(`/schedule/${id}`);
+    } finally {
+      setAddingWeek(false);
+    }
   };
 
   return (
@@ -149,22 +157,25 @@ export default function ScheduleScreen() {
           />
         ) : (
           <>
-            {weeks.map((week) => (
-              <WeekCard
-                key={week.id}
-                weekStartDate={week.week_start_date}
-                weekEndDate={week.week_end_date}
-                tag={getWeekTag(week.week_start_date)}
-                imageUri={week.schedule_image_url}
-                shiftCount={scheduledShifts.length}
-                totalHours={totalHours}
-                onViewDetails={() => router.push(`/schedule/${week.id}`)}
-                onViewImage={() =>
-                  week.schedule_image_url &&
-                  setFullScreenImage(week.schedule_image_url)
-                }
-              />
-            ))}
+            {weeks.map((week) => {
+              const stats = weekStats[week.id!] ?? { count: 0, minutes: 0 };
+              return (
+                <WeekCard
+                  key={week.id}
+                  weekStartDate={week.week_start_date}
+                  weekEndDate={week.week_end_date}
+                  tag={getWeekTag(week.week_start_date)}
+                  imageUri={week.schedule_image_url}
+                  shiftCount={stats.count}
+                  totalHours={Math.round((stats.minutes / 60) * 10) / 10}
+                  onViewDetails={() => router.push(`/schedule/${week.id}`)}
+                  onViewImage={() =>
+                    week.schedule_image_url &&
+                    setFullscreenImage(week.schedule_image_url)
+                  }
+                />
+              );
+            })}
             <AppButton
               label="+ Add new week schedule"
               onPress={() => setShowAddWeek(true)}
@@ -172,19 +183,12 @@ export default function ScheduleScreen() {
           </>
         )}
       </ScrollView>
-      <TouchableOpacity onPress={resetWeeks} style={styles.resetBtn}>
-        <Text style={styles.resetText}>Dev: Reset weeks</Text>
-      </TouchableOpacity>
 
       <BottomSheet
         visible={showAddWeek}
-        onDismiss={() => {
-          setShowAddWeek(false);
-          setDateError("");
-          setCustomStartDate("");
-          setCustomEndDate("");
-        }}
-        title="Add new week">
+        onDismiss={closeSheet}
+        title="Add week schedule"
+      >
         <AppButton
           label="Add current week"
           onPress={handleAddCurrentWeek}
@@ -202,9 +206,9 @@ export default function ScheduleScreen() {
           value={customStartDate}
           onChangeText={(text) => {
             setCustomStartDate(text);
-            setDateError("");
+            setDateError('');
           }}
-          placeholder="YYYY-MM-DD e.g. 2026-06-12"
+          placeholder="YYYY-MM-DD e.g. 2026-07-14"
           error={dateError}
         />
         <AppInput
@@ -212,10 +216,9 @@ export default function ScheduleScreen() {
           value={customEndDate}
           onChangeText={(text) => {
             setCustomEndDate(text);
-            setDateError("");
+            setDateError('');
           }}
-          placeholder="YYYY-MM-DD e.g. 2026-06-18"
-          error={dateError}
+          placeholder="YYYY-MM-DD e.g. 2026-07-20"
         />
 
         <AppButton
@@ -224,34 +227,25 @@ export default function ScheduleScreen() {
           loading={addingWeek}
           variant="secondary"
         />
-
         <View style={{ height: spacing.sm }} />
-
-        <AppButton
-          label="Cancel"
-          onPress={() => {
-            setShowAddWeek(false);
-            setDateError("");
-            setCustomStartDate("");
-            setCustomEndDate("");
-          }}
-          variant="secondary"
-        />
+        <AppButton label="Cancel" onPress={closeSheet} variant="secondary" />
       </BottomSheet>
 
       <Modal
-        visible={!!fullScreenImage}
+        visible={!!fullscreenImage}
         transparent
         animationType="fade"
-        onRequestClose={() => setFullScreenImage(null)}>
+        onRequestClose={() => setFullscreenImage(null)}
+      >
         <TouchableOpacity
           style={styles.fullscreenOverlay}
           activeOpacity={1}
-          onPress={() => setFullScreenImage(null)}>
-          {fullScreenImage && (
+          onPress={() => setFullscreenImage(null)}
+        >
+          {fullscreenImage && (
             <Image
-              source={{ uri: fullScreenImage }}
-              style={styles.fullScreenImage}
+              source={{ uri: fullscreenImage }}
+              style={styles.fullscreenImage}
               resizeMode="contain"
             />
           )}
@@ -262,44 +256,21 @@ export default function ScheduleScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    padding: spacing.lg,
-  },
-  fullscreenOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.9)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  fullScreenImage: {
-    width: "100%",
-    height: "80%",
-  },
+  screen: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.lg },
   divider: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
     marginVertical: spacing.md,
   },
-  dividerLine: {
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { fontSize: fontSize.caption, color: colors.textMuted },
+  fullscreenOverlay: {
     flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  dividerText: {
-    fontSize: fontSize.caption,
-    color: colors.textMuted,
-  },
-  resetBtn: {
-    padding: spacing.md,
-    alignItems: "center",
-  },
-  resetText: {
-    fontSize: fontSize.caption,
-    color: colors.error,
-  },
+  fullscreenImage: { width: '100%', height: '80%' },
 });
