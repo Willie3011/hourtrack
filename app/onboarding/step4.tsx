@@ -12,6 +12,7 @@ import AppButton from "../../src/components/shared/AppButton";
 
 export default function OnboardingStep4() {
     const params = useLocalSearchParams<{
+        name: string;
         hourlyRate: string;
         contractedHours: string;
         overtimeMultiplier: string;
@@ -37,6 +38,7 @@ export default function OnboardingStep4() {
         setLoading(true);
         try {
             await saveSettingsToStore({
+                name: params.name ?? '',
                 hourly_rate: hourlyRate,
                 contracted_weekly_hours: Number(params.contractedHours),
                 overtime_multiplier: overtimeMultiplier,
