@@ -12,7 +12,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useHourTrackStore } from '../src/store';
 import { getAllScheduledShifts } from '../src/database/schedulesShifts';
 import { calculateNetShiftMinutes } from '../src/utils/calaculations';
-import { getMondayOf, addDays, toDateString } from '../src/utils/dates';
+import { getMondayOf, addDays, toDateString, getWeekTag } from '../src/utils/dates';
 import WeekCard from '../src/components/schedule/WeekCard';
 import EmptyState from '../src/components/shared/EmptyState';
 import AppButton from '../src/components/shared/AppButton';
@@ -76,17 +76,6 @@ export default function ScheduleScreen() {
     }, [loadWeeks])
   );
 
-  const getWeekTag = (weekStartDate: string): string => {
-    const now = new Date();
-    const start = new Date(weekStartDate);
-    const diffDays = Math.floor(
-      (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    if (diffDays < 7) return 'Current week';
-    if (diffDays < 14) return 'Last week';
-    return `${Math.floor(diffDays / 7)} weeks ago`;
-  };
-
   const weekAlreadyExists = (start: string): boolean =>
     weeks.some((w) => w.week_start_date === start);
 
@@ -97,13 +86,15 @@ export default function ScheduleScreen() {
     setCustomEndDate('');
   };
 
-  const handleAddCurrentWeek = async () => {
-    const monday = getMondayOf(new Date());
+  const handleAddQuickWeek = async (weekOffset: 0 | 1) => {
+    const monday = addDays(getMondayOf(new Date()), weekOffset * 7);
     const start = toDateString(monday);
     const end = toDateString(addDays(monday, 6));
 
-    if (weekAlreadyExists(start)) {
-      setDateError('Current week already exists');
+    if(weekAlreadyExists(start)) {
+      setDateError(
+        weekOffset === 0 ? 'Current week already exists' : 'Next week already exists'
+      );
       return;
     }
     setAddingWeek(true);
@@ -114,7 +105,7 @@ export default function ScheduleScreen() {
     } finally {
       setAddingWeek(false);
     }
-  };
+  }
 
   const handleAddCustomWeek = async () => {
     if (!customStartDate || !customEndDate) {
@@ -191,10 +182,17 @@ export default function ScheduleScreen() {
         title="Add week schedule"
       >
         <AppButton
-          label="Add current week"
-          onPress={handleAddCurrentWeek}
+          label="Add next week"
+          onPress={() => handleAddQuickWeek(1)}
           loading={addingWeek}
         />
+        <View style={{ height: spacing.sm }} />
+        <AppButton
+          label="Add current week"
+          onPress={() => handleAddQuickWeek(0)}
+          loading={addingWeek}
+        />
+        {dateError ? <Text style={styles.quickError}>{dateError}</Text> : null}
 
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
@@ -250,21 +248,42 @@ export default function ScheduleScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg },
+  screen: { 
+    flex: 1, 
+    backgroundColor: colors.background 
+  },
+  content: { 
+    padding: spacing.lg 
+  },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     marginVertical: spacing.md,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
-  dividerText: { fontSize: fontSize.caption, color: colors.textMuted },
+  dividerLine: { 
+    flex: 1, 
+    height: 1, 
+    backgroundColor: colors.border 
+  },
+  dividerText: { 
+    fontSize: fontSize.caption, 
+    color: colors.textMuted 
+  },
   fullscreenOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.9)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  fullscreenImage: { width: '100%', height: '80%' },
+  fullscreenImage: { 
+    width: '100%', 
+    height: '80%' 
+  },
+  quickError: {
+    fontSize: fontSize.caption,
+    color: colors.error,
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  }
 });

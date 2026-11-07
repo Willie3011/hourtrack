@@ -21,6 +21,7 @@ import {
   Alert,
 } from "react-native";
 import { calculateNetShiftMinutes } from "../../src/utils/calaculations";
+import { getWeekTag } from "@/src/utils/dates";
 
 export default function WeekDetailScreen() {
   const params = useLocalSearchParams();
@@ -63,19 +64,6 @@ export default function WeekDetailScreen() {
       );
       return total + netMinutes / 60;
     }, 0);
-  };
-
-  const getWeekTag = (): string => {
-    if (!activeWeek) return "";
-
-    const now = new Date();
-    const start = new Date(activeWeek.week_start_date);
-    const diffDays = Math.floor(
-      (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-    );
-    if (diffDays < 7) return "Current week";
-    if (diffDays < 14) return "Last week";
-    return `${Math.floor(diffDays / 7)} weeks ago`;
   };
 
   const handleSaveShift = async (day: string, start: string, end: string) => {
@@ -140,7 +128,7 @@ export default function WeekDetailScreen() {
       <WeekDetailHeader
         weekStartDate={activeWeek.week_start_date}
         weekEndDate={activeWeek.week_end_date}
-        tag={getWeekTag()}
+        tag={getWeekTag(activeWeek.week_start_date)}
         onBack={() => router.back}
       />
 

@@ -39,3 +39,14 @@ export const getMondayOf = (d: Date): Date => {
   copy.setDate(copy.getDate() + (day === 0 ? -6 : 1 - day));
   return copy;
 };
+
+export const getWeekTag = (weekStartDate: string): string => {
+    const now = new Date();
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const start = parseDateString(weekStartDate);
+    const diffDays = Math.round((todayMidnight.getTime() - start.getTime()) / 86400000);
+    if (diffDays < 0) return 'Upcoming week';
+    if (diffDays < 7) return 'Current week';
+    if(diffDays < 14) return 'Last week';
+    return `${Math.floor(diffDays / 7)} weeks ago`;
+  };
