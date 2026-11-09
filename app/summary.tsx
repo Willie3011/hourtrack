@@ -84,13 +84,13 @@ export default function SummaryScreen() {
     const periodTitle = `${view === "monthly" ? "" : "Week "}${period.label}`;
     setGenerating(true);
     try {
-      await exportReportPdf({ 
-        periodTitle, 
-        shifts, 
-        totals, 
+      await exportReportPdf({
+        periodTitle,
+        shifts,
+        totals,
         scheduledMinutes,
-        workerName: settings.name
-       });
+        workerName: settings.name,
+      });
     } catch (error) {
       console.error("PDF export failed, falling back to text:", error);
       // Fall back to the plain text report so the user is never stuck
@@ -137,6 +137,7 @@ export default function SummaryScreen() {
         <HoursBreakdownList totals={totals} />
       ) : (
         <EmptyState
+          icon="bar-chart-outline"
           title={`No data for this ${view === "monthly" ? "month" : "week"}`}
           message={`Log your shifts and save your schedule to see your ${view} summary here.`}
         />

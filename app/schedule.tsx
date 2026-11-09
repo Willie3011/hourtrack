@@ -12,13 +12,13 @@ import { router, useFocusEffect } from 'expo-router';
 import { useHourTrackStore } from '../src/store';
 import { getAllScheduledShifts } from '../src/database/schedulesShifts';
 import { calculateNetShiftMinutes } from '../src/utils/calaculations';
-import { getMondayOf, addDays, toDateString, getWeekTag } from '../src/utils/dates';
+import { getMondayOf, addDays, toDateString, getWeekTag, parseDateString } from '../src/utils/dates';
 import WeekCard from '../src/components/schedule/WeekCard';
 import EmptyState from '../src/components/shared/EmptyState';
 import AppButton from '../src/components/shared/AppButton';
 import AppInput from '../src/components/shared/AppInput';
 import BottomSheet from '../src/components/shared/BottomSheet';
-import { colors, spacing, fontSize } from '../src/utils/theme';
+import { colors, spacing, fontSize, fontWeight } from '../src/utils/theme';
 import DatePicker from '@/src/components/shared/Datepicker';
 
 type WeekStats = Record<number, { count: number; minutes: number }>;
@@ -42,9 +42,9 @@ export default function ScheduleScreen() {
   const [showAddWeek, setShowAddWeek] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [addingWeek, setAddingWeek] = useState(false);
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
-  const [dateError, setDateError] = useState('');
+  const [pastWeekDay, setPastWeekDay] = useState('');
+  const [quickError, setQuickError] = useState('');
+  const [pastError, setPastError] = useState('');
   const [weekStats, setWeekStats] = useState<WeekStats>({});
 
   // Reload weeks and their shift totals every time the tab gains focus,
@@ -81,9 +81,9 @@ export default function ScheduleScreen() {
 
   const closeSheet = () => {
     setShowAddWeek(false);
-    setDateError('');
-    setCustomStartDate('');
-    setCustomEndDate('');
+    setQuickError('');
+    setPastError('');
+    setPastWeekDay('');
   };
 
   const handleAddQuickWeek = async (weekOffset: 0 | 1) => {
@@ -92,7 +92,7 @@ export default function ScheduleScreen() {
     const end = toDateString(addDays(monday, 6));
 
     if(weekAlreadyExists(start)) {
-      setDateError(
+      setQuickError(
         weekOffset === 0 ? 'Current week already exists' : 'Next week already exists'
       );
       return;
@@ -107,41 +107,44 @@ export default function ScheduleScreen() {
     }
   }
 
-  const handleAddCustomWeek = async () => {
-    if (!customStartDate || !customEndDate) {
-      setDateError('Please enter both start and end dates');
+  const handleAddPastWeek = async () => {
+    if(!pastWeekDay) {
+      setPastError('Pick any day in the week you want to add');
       return;
     }
-    if (!isValidDate(customStartDate) || !isValidDate(customEndDate)) {
-      setDateError('Enter real dates as YYYY-MM-DD e.g. 2026-07-14');
-      return;
-    }
-    if (customEndDate < customStartDate) {
-      setDateError('End date must be on or after the start date');
-      return;
-    }
-    if (weekAlreadyExists(customStartDate)) {
-      setDateError('A week starting on this date already exists');
+
+    const monday = getMondayOf(parseDateString(pastWeekDay));
+    const start = toDateString(monday);
+    const end = toDateString(addDays(monday, 6));
+
+    if(weekAlreadyExists(start)) {
+      setPastError('This week is already saved');
       return;
     }
     setAddingWeek(true);
     try {
-      const id = await addWeek({
-        week_start_date: customStartDate,
-        week_end_date: customEndDate,
-      });
+      const id = await addWeek({week_start_date: start, week_end_date: end});
       closeSheet();
       router.push(`/schedule/${id}`);
     } finally {
       setAddingWeek(false);
     }
-  };
+  }
+
+  const pastWeekPreview = (() => {
+    if(!pastWeekDay) return '';
+    const monday = getMondayOf(parseDateString(pastWeekDay));
+    const fmt = (d: Date) => 
+      d.toLocaleDateString('en-ZA', {weekday: 'short', day: 'numeric', month: 'short'});
+    return `${fmt(monday)} to ${fmt(addDays(monday, 6))}`;
+  })();
 
   return (
     <>
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
         {weeks.length === 0 ? (
           <EmptyState
+            icon="calendar-outline"
             title="No schedules saved yet"
             message="Upload your weekly schedule image or add your shifts manually to get started."
             actionLabel="+ Add first schedule"
@@ -192,7 +195,7 @@ export default function ScheduleScreen() {
           onPress={() => handleAddQuickWeek(0)}
           loading={addingWeek}
         />
-        {dateError ? <Text style={styles.quickError}>{dateError}</Text> : null}
+        {quickError ? <Text style={styles.quickError}>{quickError}</Text> : null}
 
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
@@ -201,24 +204,26 @@ export default function ScheduleScreen() {
         </View>
 
         <DatePicker
-          label='Week start date'
-          value={customStartDate}
-          onChange={setCustomStartDate}
-          error={dateError}
+          label="Pick any day in that week"
+          value={pastWeekDay}
+          onChange={(d) => {
+            setPastWeekDay(d)
+            setPastError('')
+          }}
+          error={pastError}
         />
-        <DatePicker
-          label='Week end date'
-          value={customEndDate}
-          onChange={setCustomEndDate}
-          error={dateError}
-        />
+        {pastWeekPreview ? (
+          <Text style={styles.weekPreview}>Week: {pastWeekPreview}</Text>
+        ) : null
+        }
 
         <AppButton
-          label="Add past week"
-          onPress={handleAddCustomWeek}
+          label='Add past week'
+          onPress={handleAddPastWeek}
           loading={addingWeek}
-          variant="secondary"
+          variant='secondary'
         />
+
         <View style={{ height: spacing.sm }} />
         <AppButton label="Cancel" onPress={closeSheet} variant="secondary" />
       </BottomSheet>
@@ -285,5 +290,11 @@ const styles = StyleSheet.create({
     color: colors.error,
     marginTop: spacing.sm,
     textAlign: 'center',
+  },
+  weekPreview: {
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semibold,
+    color: colors.emeraldDark,
+    marginBottom: spacing.md
   }
 });

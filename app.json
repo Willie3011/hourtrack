@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "hourtrack",
+    "name": "HourTrack",
     "slug": "hourtrack",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -29,9 +29,15 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth" : 240,
+          "imageWidth": 240,
           "resizeMode": "contain",
           "backgroundColor": "#111111"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "HourTrack needs access to your photos so you can save your weekly schedule."
         }
       ],
       "expo-sqlite",
@@ -40,6 +46,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c931e27b-8b66-42e1-a50b-94a82eb7131c"
+      }
     }
   }
 }

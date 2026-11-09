@@ -91,17 +91,18 @@ export interface ScheduledShiftWithWeek extends ScheduledShift {
 }
 
 export const getScheduledShiftsInRange = async (
-    startDate: string, 
-    endDate: string): Promise<ScheduledShiftWithWeek[]> => {
-        const db = await getDatabase();
-        return db.getAllAsync<ScheduledShiftWithWeek>(
-            `SELECT ss.*, w.week_start_date, w.week_end_date
-             FROM scheduled_shifts ss
-             JOIN weeks w ON ss.week_id = w.id
-             WHERE w.week_start_date >= ? AND w.week_end_date <= ?`,
-            [startDate, endDate]
-        );
-}
+  startDate: string,
+  endDate: string
+): Promise<ScheduledShiftWithWeek[]> => {
+  const db = await getDatabase();
+  return db.getAllAsync<ScheduledShiftWithWeek>(
+    `SELECT ss.*, w.week_start_date, w.week_end_date
+     FROM scheduled_shifts ss
+     JOIN weeks w ON ss.week_id = w.id
+     WHERE w.week_end_date >= ? AND w.week_start_date <= ?`,
+    [startDate, endDate]
+  );
+};
 
 export const getAllScheduledShifts = async (): Promise<ScheduledShift[]> => {
     const db = await getDatabase();

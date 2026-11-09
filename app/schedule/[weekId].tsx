@@ -22,6 +22,7 @@ import {
 } from "react-native";
 import { calculateNetShiftMinutes } from "../../src/utils/calaculations";
 import { getWeekTag } from "@/src/utils/dates";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function WeekDetailScreen() {
   const params = useLocalSearchParams();
@@ -108,10 +109,10 @@ export default function WeekDetailScreen() {
     try {
       await setWeekImage(Number(weekId), uri);
     } catch (error) {
-      console.error('Saving schedule image failed: ', error);
-      Alert.alert('Could not save image', 'Please try again');
+      console.error("Saving schedule image failed: ", error);
+      Alert.alert("Could not save image", "Please try again");
     }
-  }
+  };
 
   if (!activeWeek) {
     return (
@@ -125,67 +126,71 @@ export default function WeekDetailScreen() {
 
   return (
     <>
-      <WeekDetailHeader
-        weekStartDate={activeWeek.week_start_date}
-        weekEndDate={activeWeek.week_end_date}
-        tag={getWeekTag(activeWeek.week_start_date)}
-        onBack={() => router.back}
-      />
-
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-        <ScheduleImageBox
-          imageUri={activeWeek.schedule_image_url}
-          onImageSelected={handleImageSelected}
-          onViewFullscreen={() =>
-            activeWeek.schedule_image_url &&
-            setFullScreenImage(activeWeek.schedule_image_url)
-          }
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <WeekDetailHeader
+          weekStartDate={activeWeek.week_start_date}
+          weekEndDate={activeWeek.week_end_date}
+          tag={getWeekTag(activeWeek.week_start_date)}
+          onBack={() => router.back}
         />
 
-        <SectionHeader
-          title="Shifts"
-          actionLabel="+ Add shift"
-          onActionPress={() => {
-            setEditingShift(null);
-            setShowAddShift(true);
-          }}
-        />
-
-        {scheduledShifts.length === 0 ? (
-          <EmptyState
-            title="No shifts added yet"
-            message="Add your shifts manually or upload a schedule image above."
+        <ScrollView
+          style={styles.screen}
+          contentContainerStyle={styles.content}>
+          <ScheduleImageBox
+            imageUri={activeWeek.schedule_image_url}
+            onImageSelected={handleImageSelected}
+            onViewFullscreen={() =>
+              activeWeek.schedule_image_url &&
+              setFullScreenImage(activeWeek.schedule_image_url)
+            }
           />
-        ) : (
-          scheduledShifts.map((shift) => (
-            <ShiftEntryRow
-              key={shift.id}
-              day={shift.day_of_week}
-              shiftStart={shift.shift_start}
-              shiftEnd={shift.shift_end}
-              onEdit={() => {
-                setEditingShift(shift);
-                setShowAddShift(true);
-              }}
-              onDelete={() => removeScheduledShift(shift.id!)}
+
+          <SectionHeader
+            title="Shifts"
+            actionLabel="+ Add shift"
+            onActionPress={() => {
+              setEditingShift(null);
+              setShowAddShift(true);
+            }}
+          />
+
+          {scheduledShifts.length === 0 ? (
+            <EmptyState
+              title="No shifts added yet"
+              message="Add your shifts manually or upload a schedule image above."
             />
-          ))
-        )}
+          ) : (
+            scheduledShifts.map((shift) => (
+              <ShiftEntryRow
+                key={shift.id}
+                day={shift.day_of_week}
+                shiftStart={shift.shift_start}
+                shiftEnd={shift.shift_end}
+                onEdit={() => {
+                  setEditingShift(shift);
+                  setShowAddShift(true);
+                }}
+                onDelete={() => removeScheduledShift(shift.id!)}
+              />
+            ))
+          )}
 
-        {scheduledShifts.length > 0 && (
-          <WeekSummaryBar
-            shiftCount={scheduledShifts.length}
-            totalHours={Math.round(Number(totalHours) * 10) / 10}
-            contractedHours={settings?.contracted_weekly_hours ?? 45}
-          />
-        )}
-        <TouchableOpacity
-          style={styles.deleteWeekBtn}
-          onPress={handleDeleteWeek}
-          activeOpacity={0.7}>
-          <Text style={styles.deleteWeekText}>Delete this week</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          {scheduledShifts.length > 0 && (
+            <WeekSummaryBar
+              shiftCount={scheduledShifts.length}
+              totalHours={Math.round(Number(totalHours) * 10) / 10}
+              contractedHours={settings?.contracted_weekly_hours ?? 45}
+            />
+          )}
+          <TouchableOpacity
+            style={styles.deleteWeekBtn}
+            onPress={handleDeleteWeek}
+            activeOpacity={0.7}>
+            <Text style={styles.deleteWeekText}>Delete this week</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
 
       <BottomSheet
         visible={showAddShift}
@@ -235,6 +240,10 @@ export default function WeekDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   screen: {
     flex: 1,
     backgroundColor: colors.background,
