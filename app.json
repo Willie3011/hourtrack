@@ -1,23 +1,21 @@
 {
   "expo": {
-    "name": "hourtrack",
+    "name": "HourTrack",
     "slug": "hourtrack",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/Logo.png",
     "scheme": "hourtrack",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#10b981"
       },
+      "package": "com.willie3011.hourtrack",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
@@ -31,8 +29,15 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
+          "imageWidth": 240,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#111111"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "HourTrack needs access to your photos so you can save your weekly schedule."
         }
       ],
       "expo-sqlite",
@@ -41,6 +46,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c931e27b-8b66-42e1-a50b-94a82eb7131c"
+      }
     }
   }
 }

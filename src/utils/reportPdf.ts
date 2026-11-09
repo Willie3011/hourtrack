@@ -1,5 +1,6 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import {File, Paths} from 'expo-file-system';
 import { LoggedShift } from '../database/loggedShifts';
 import { ShiftTotals, formatMoney } from './summary';
 import { formatDuration } from './calaculations';
@@ -137,15 +138,45 @@ const buildReportHtml = ({
 </html>`;
 };
 
+const safeFileName = (
+  workerName: string | undefined,
+  periodTitle: string
+): string => {
+  const clean = (s: string) =>
+    s.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const parts = [
+    'HourTrack',
+    workerName ? clean(workerName) : '',
+    clean(periodTitle),
+  ].filter(Boolean);
+  return `${parts.join('-')}.pdf`;
+};
+
 export const exportReportPdf = async (params: ReportParams): Promise<void> => {
   const html = buildReportHtml(params);
   const { uri } = await Print.printToFileAsync({ html });
+
+  // Rename so the recipient sees a meaningful file name.
+  // If the rename fails for any reason, share with the default name instead.
+  let shareUri = uri;
+  try {
+    const target = new File(
+      Paths.cache,
+      safeFileName(params.workerName, params.periodTitle)
+    );
+    if (target.exists) target.delete();
+    const source = new File(uri);
+    source.move(target);
+    shareUri = source.uri;
+  } catch (error) {
+    console.error('PDF rename failed, sharing with default name:', error);
+  }
 
   if (!(await Sharing.isAvailableAsync())) {
     throw new Error('Sharing is not available on this device');
   }
 
-  await Sharing.shareAsync(uri, {
+  await Sharing.shareAsync(shareUri, {
     mimeType: 'application/pdf',
     UTI: 'com.adobe.pdf',
     dialogTitle: `HourTrack — ${params.periodTitle}`,

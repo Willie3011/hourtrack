@@ -23,6 +23,7 @@ export default function RecentShiftsList({ shifts }: RecentShiftsListProps) {
       />
       {shifts.length === 0 ? (
         <EmptyState
+          icon="time-outline"
           title="No shifts logged yet"
           message="Start by logging your first shift or uploading this week's schedule."
           actionLabel="Log your first shift"

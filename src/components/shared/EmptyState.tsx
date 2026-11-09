@@ -7,8 +7,13 @@ import {
   spacing,
 } from '../../utils/theme';
 import AppButton from './AppButton';
+import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 interface EmptyStateProps {
+  icon?: IconName;
   title: string;
   message: string;
   actionLabel?: string;
@@ -16,6 +21,7 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({
+  icon = 'file-tray-outline',
   title,
   message,
   actionLabel,
@@ -23,7 +29,9 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <View style={styles.container}>
-      <View style={styles.iconPlaceholder} />
+      <View style={styles.iconWrap}>
+        <Ionicons name={icon} size={26} color={colors.emeraldDark} />
+      </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
       {actionLabel && onActionPress && (
@@ -49,13 +57,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: spacing.md,
   },
-  iconPlaceholder: {
-    width: 48,
-    height: 48,
+  iconWrap: {
+    width: 56,
+    height: 56,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.emeraldLight,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: spacing.md,
   },
   title: {

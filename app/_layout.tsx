@@ -5,6 +5,7 @@ import { useHourTrackStore } from '../src/store';
 import { colors, fontSize, fontWeight } from '../src/utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import {StatusBar} from 'expo-status-bar';
 
 export default function RootLayout() {
   const loadSettings = useHourTrackStore((state) => state.loadSettings);
@@ -27,6 +28,7 @@ useEffect(() => {
 
   return (
     <SafeAreaProvider>
+      <StatusBar style="dark" />
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: colors.emerald,
@@ -35,9 +37,9 @@ useEffect(() => {
             backgroundColor: colors.background,
             borderTopColor: colors.border,
             borderTopWidth: 1,
-            height: 94,
-            paddingBottom: 8,
-            paddingTop: 8,
+          },
+          tabBarItemStyle: {
+            paddingTop: 4,
           },
           tabBarLabelStyle: {
             fontSize: fontSize.caption,

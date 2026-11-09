@@ -8,16 +8,27 @@ import AppButton from "../../src/components/shared/AppButton";
 
 
 export default function OnboardingStep1() {
+    const [name, setName] = useState('');
     const [hourlyRate, setHourlyRate] = useState('');
     const [contractedHours, setContractedHours] = useState('');
     const [errors, setErrors] = useState({
+        name: '',
         hourlyRate: '',
         contractedHours: ''
     });
 
     const validate = (): boolean => {
-        const newErrors = { hourlyRate: '', contractedHours: '' };
+        const newErrors = { name: '', hourlyRate: '', contractedHours: '' };
         let valid = true;
+
+        const trimmed = name.trim();
+        if(!trimmed) {
+            newErrors.name = 'Please enter your name';
+            valid = false;
+        } else if(trimmed.length > 30) {
+            newErrors.name = 'Keep it under 30 characters';
+            valid = false;
+        }
 
         if (!hourlyRate || isNaN(Number(hourlyRate)) || Number(hourlyRate) <= 0) {
             newErrors.hourlyRate = 'Please enter a valid hourly rate';
@@ -39,6 +50,7 @@ export default function OnboardingStep1() {
         router.push({
             pathname: '/onboarding/step2',
             params: {
+                name: name.trim(),
                 hourlyRate,
                 contractedHours
             }
@@ -53,11 +65,20 @@ export default function OnboardingStep1() {
         >
             <StepIndicator totalSteps={4} currentStep={0} />
             
-            <Text style={styles.title}>Basic rate</Text>
+            <Text style={styles.title}>Welcome to HourTrack</Text>
             <Text style={styles.subtitle}>
-                Enter your hourly rate so the app can calculate your expected salary.
+                Tell us your name and hourly rate so the app can calculate your expected earnings.
             </Text>
 
+            <AppInput
+                label="Your name"
+                value={name}
+                onChangeText={setName}
+                placeholder="e.g. John"
+                autoCapitalize="words"
+                hint="Shown on your home screen and on reports you share"
+                error={errors.name}
+            />
             <AppInput
                 label="Hourly rate (R)"
                 value={hourlyRate}
