@@ -1,4 +1,5 @@
 # HourTrack
+![Logo](assets/images/Logo.png)
 
 > Your Work, Your Time, Your Earnings — Simplified
 
